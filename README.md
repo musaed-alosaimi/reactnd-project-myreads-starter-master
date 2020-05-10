@@ -1,6 +1,6 @@
 # reactnd-project-myreads-starter-master
 
-Application Features
+<h2>Application Features</h2>
 1) It has 2 main places for books ( Library, Store ) <br />
 2) Showing books in the library categorized as Currently Reading, Want To Read, and Read <br />
 3) Allow Searching for Books by title and book's author <br />
