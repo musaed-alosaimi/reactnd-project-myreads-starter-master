@@ -4,10 +4,9 @@ import './css/App.css';
 import {getAll, get, update, search} from './BooksAPI'
 import ShelvesList from './ShelvesList'
 import Book from "./Book";
-import {Route, Link, Switch} from "react-router-dom";
+import {Route, Link} from "react-router-dom";
 import Header from './Header'
 import BookDetails from './BookDetails'
-import { debounce } from 'throttle-debounce';
 
 
 class BooksApp extends React.Component {
@@ -41,7 +40,9 @@ class BooksApp extends React.Component {
 
         CurrentBook: {},
 
-        CurrentURLState: ''
+        CurrentURLState: '',
+
+        finishLoading: false
 
     }
 
@@ -85,15 +86,16 @@ class BooksApp extends React.Component {
             })
 
             update(book, newShelf).then(() => {
-                console.log("Book is updated");
+                // console.log("Book is updated");
             }).catch((ErrorMessage) => {
 
-                console.log("The book is not updated : " + ErrorMessage);
+                // console.log("The book is not updated : " + ErrorMessage);
             });
 
         } else {
 
             this.setState((CurrentState) => {
+
 
                 let storeBooks = CurrentState.store.books;
                 let updatedStoreBooks = storeBooks.map((currentBook) => {
@@ -116,7 +118,7 @@ class BooksApp extends React.Component {
                         library: {
                             shelves: CurrentState.library.shelves,
                             books: [...libraryBooks, book]
-                        }, store: {books: updatedStoreBooks}
+                        }, store: {books: updatedStoreBooks, searchValue: CurrentState.store.searchValue}
                     };
 
                 } else {
@@ -144,13 +146,11 @@ class BooksApp extends React.Component {
 
                     })
 
-                    console.log(updatedStoreBooks);
-
                     return {
                         library: {
                             shelves: CurrentState.library.shelves,
                             books: updatedLibraryBooks
-                        }, store: {books: updatedStoreBooks}
+                        }, store: {books: updatedStoreBooks, searchValue: CurrentState.store.searchValue}
 
                     }
 
@@ -189,15 +189,11 @@ class BooksApp extends React.Component {
 
     searchForBook = (SearchText) => {
 
-        this.setState((CurrentState) => ({store: {books: CurrentState.store.books, searchValue: SearchText}}));
-
+        this.setState((CurrentState) => ({store: {books: CurrentState.store.books,searchValue: SearchText}}));
 
         if (SearchText.trim() === "") {
 
-            this.setState((CurrentState) => ({store: {books: []}}));
-
-            console.log(this.state.store.books);
-
+            this.setState((CurrentState) => ({store: {books: [],searchValue: CurrentState.store.searchValue}}));
 
             return '';
         }
@@ -208,32 +204,32 @@ class BooksApp extends React.Component {
 
             this.setState( (CurrentState) => {
 
-                    let LibrarySearch = CurrentState.library.books.filter((book) => (book.title.includes(SearchText)));
+                    //let LibrarySearch = CurrentState.library.books.filter((book) => (book.title.includes(SearchText) || book.authors.toString().includes(SearchText)));
+                let libraryBooks = CurrentState.library.books;
 
                     // to update the store objects to have "shelf" property
                     result.map((storeBook, index) => {
-                        LibrarySearch.map(libraryBook => {
+                        libraryBooks.map(libraryBook => {
 
                             if (libraryBook.id === storeBook.id) {
-                                result[index].shelf = libraryBook.shelf;
-                                console.log(result[index]);
+                                storeBook.shelf = libraryBook.shelf;
                             }
 
-                            return "";
+                            return libraryBook;
                         })
 
-                        return "";
+                        return storeBook;
                     })
 
-                console.log(result);
 
-                return {store: {books: result}}
+                return {store: {books: result,searchValue: CurrentState.store.searchValue}}
 
                 }
             )
 
 
         });
+
 
     }
 
@@ -259,24 +255,42 @@ class BooksApp extends React.Component {
                   However, remember that the BooksAPI.search method DOES search by title or author. So, don't worry if
                   you don't find a specific author or title. Every search is limited by search terms.
                 */}
+
+
+                                    {this.state.store.searchValue === undefined && this.setState((CurrentState) => ({store: {books: CurrentState.store.books, searchValue: ''}}))}
                                     <input type="text" placeholder="Search by title or author"
                                            value={this.state.store.searchValue}
                                            onChange={(event) => {this.searchForBook(event.target.value)}}/>
 
+
+
                                 </div>
                             </div>
                             <div className="search-books-results">
+
+
+
+                                {this.state.store.searchValue.trim() !== "" &&
+
                                 <ol className="books-grid">
 
                                     {this.state.store.books.map((book, book_id) => {
 
                                         return <Book book={book} book_id={book_id}
                                                      updateBookShelf={this.updateBookShelf}
-                                                     place='store' key={book_id}/>
+                                                     place='store' key={book_id} />
 
                                     })}
 
+                                    {this.state.store.books.length === 0 &&
+
+                                    <div>No Books Found</div>
+                                    }
+
                                 </ol>
+
+                                }
+
                             </div>
                         </div>
 
@@ -311,7 +325,7 @@ class BooksApp extends React.Component {
                         <BookDetails book={this.state.CurrentBook}
                                      imageURL={this.state.CurrentBook.imageLinks === undefined ? '' : this.state.CurrentBook.imageLinks.thumbnail}
                                      rating={this.state.CurrentBook.ratingCount === undefined ? "No Rating" : `${this.state.CurrentBook.ratingCount} / 10`}
-                                     setBookDetails={this.setBookDetails}/>
+                                     setBookDetails={this.setBookDetails} />
 
                     </Route>
 
@@ -319,6 +333,8 @@ class BooksApp extends React.Component {
 
         )
     }
+
+
 }
 
 export default BooksApp

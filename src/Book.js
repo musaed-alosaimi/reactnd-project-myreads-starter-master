@@ -7,7 +7,9 @@ export default class Book extends Component {
 
     state = {
 
-        selectValue: this.props.book.shelf === undefined ? "none" : this.props.book.shelf
+        selectValue: this.props.book.shelf === undefined ? "none" : this.props.book.shelf,
+
+        finishLoading: false
 
     }
 
@@ -26,15 +28,14 @@ export default class Book extends Component {
         let imageURL = book.imageLinks === undefined ? '' : book.imageLinks.thumbnail;
 
         return <li>
-
             <div className="book">
-                <div className="book-top" >
+                <div className="book-top">
                     <Link to={{pathname: `/book/${book.id}`}}>
                         <div className="book-cover" style={{
                             width: 128,
                             height: 193,
-                            backgroundImage: `url(${imageURL})`
-                        }} ></div>
+                            background: `url(${imageURL})`
+                        }}></div>
                     </Link>
                     <div className="book-shelf-changer">
 

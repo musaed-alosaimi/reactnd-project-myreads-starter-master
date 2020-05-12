@@ -12,3 +12,5 @@
 1) install node.js <br />
 2) install npm inside the app's main directory using " npm install " <br />
 3) start the application using " npm start "<br />
+4) install font-awesome by applying " npm i --save @fortawesome/fontawesome-svg-core  @fortawesome/free-solid-svg-icons @fortawesome/react-fontawesome"
+ on the folder main directory

@@ -1,4 +1,5 @@
 import React, {Component} from 'react'
+import LoadingSpinner from "./LoadingSpinner";
 
 
 
@@ -20,7 +21,7 @@ export default class BookDetails extends Component{
     componentDidMount() {
 
         this.newDetails = false;
-        this.props.setBookDetails(this.getBookValueURL());
+        setTimeout(this.props.setBookDetails(this.getBookValueURL()),2000);
         this.newDetails = true;
     }
 
@@ -34,6 +35,7 @@ export default class BookDetails extends Component{
         if(this.newDetails) {
 
             return <div id='book-details'>
+
                 <div className="book-left">
                     <div className='book-title'>{book.title}</div>
                     <div className="book-cover" style={{backgroundImage: `url(${imageURL})`}}></div>
@@ -60,7 +62,7 @@ export default class BookDetails extends Component{
             </div>
 
         }else{
-            return ""
+            return <div id='book-details'><br/><br/><LoadingSpinner/></div>
         }
 
 
