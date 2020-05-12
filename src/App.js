@@ -207,8 +207,8 @@ class BooksApp extends React.Component {
                     //let LibrarySearch = CurrentState.library.books.filter((book) => (book.title.includes(SearchText) || book.authors.toString().includes(SearchText)));
                 let libraryBooks = CurrentState.library.books;
 
-                    // to update the store objects to have "shelf" property
-                    result.map((storeBook, index) => {
+                    // to set the shelf property of the store books same as the ones of the library books
+                    result = result.map((storeBook, index) => {
                         libraryBooks.map(libraryBook => {
 
                             if (libraryBook.id === storeBook.id) {
