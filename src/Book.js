@@ -1,5 +1,5 @@
 import React, {Component} from 'react'
-import {Route, Link} from 'react-router-dom'
+import {Link} from 'react-router-dom'
 import './css/book.css'
 
 export default class Book extends Component {
@@ -7,7 +7,7 @@ export default class Book extends Component {
 
     state = {
 
-        selectValue: this.props.book.shelf == undefined ? "none" : this.props.book.shelf
+        selectValue: this.props.book.shelf === undefined ? "none" : this.props.book.shelf
 
     }
 
@@ -15,13 +15,13 @@ export default class Book extends Component {
 
         this.setState({selectValue: newShelf});
 
-        this.props.updateBookShelf(newShelf, this.props.book_id, this.props.place);
+        this.props.updateBookShelf(newShelf, this.props.book, this.props.place);
 
     }
 
     render() {
 
-        let {book, book_id} = this.props;
+        let {book} = this.props;
 
         let imageURL = book.imageLinks === undefined ? '' : book.imageLinks.thumbnail;
 

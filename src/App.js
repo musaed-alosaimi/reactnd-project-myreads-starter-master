@@ -4,9 +4,10 @@ import './css/App.css';
 import {getAll, get, update, search} from './BooksAPI'
 import ShelvesList from './ShelvesList'
 import Book from "./Book";
-import {Route, Link, Switch, useParams} from "react-router-dom";
+import {Route, Link, Switch} from "react-router-dom";
 import Header from './Header'
 import BookDetails from './BookDetails'
+import { debounce } from 'throttle-debounce';
 
 
 class BooksApp extends React.Component {
@@ -32,7 +33,9 @@ class BooksApp extends React.Component {
 
         store: {
 
-            books: []
+            books: [],
+
+            searchValue: ''
 
         },
 
@@ -63,20 +66,25 @@ class BooksApp extends React.Component {
 
     }
 
-    updateBookShelf = (newShelf, book_id, place) => {
+    updateBookShelf = (newShelf, book, place) => {
 
         if (place === 'library') {
 
             this.setState((CurrentState) => {
 
-                let updatedBooks = CurrentState.library.books;
-                updatedBooks[book_id].shelf = newShelf;
+                let updatedBooks = CurrentState.library.books.map((currentBook) => {
+                    if(currentBook.id === book.id){
+                        book.shelf = newShelf;
+                        currentBook = book;
+                    }
+                    return currentBook;
+                });
 
                 return {library: {shelves: CurrentState.library.shelves, books: updatedBooks}};
 
             })
 
-            update(this.state.library.books[book_id], newShelf).then(() => {
+            update(book, newShelf).then(() => {
                 console.log("Book is updated");
             }).catch((ErrorMessage) => {
 
@@ -87,21 +95,71 @@ class BooksApp extends React.Component {
 
             this.setState((CurrentState) => {
 
-                let updatedBooks = CurrentState.store.books;
-                updatedBooks[book_id].shelf = newShelf;
+                let storeBooks = CurrentState.store.books;
+                let updatedStoreBooks = storeBooks.map((currentBook) => {
+
+                    if (currentBook.id === book.id) {
+                        currentBook = book;
+                    }
+
+                    return currentBook;
+
+                })
+
+                let libraryBooks = CurrentState.library.books;
+
+                if (book.shelf === "none" || book.shelf === undefined) {
+
+                    book.shelf = newShelf;
+
+                    return {
+                        library: {
+                            shelves: CurrentState.library.shelves,
+                            books: [...libraryBooks, book]
+                        }, store: {books: updatedStoreBooks}
+                    };
+
+                } else {
+
+                    book.shelf = newShelf;
+
+                    let updatedLibraryBooks = libraryBooks.map((currentBook, index) => {
+
+                        if (currentBook.id === book.id) {
+                            currentBook = book;
+                        }
 
 
-                return {
-                    library: {
-                        shelves: CurrentState.library.shelves,
-                        books: [...CurrentState.library.books, updatedBooks[book_id]]
-                    }, store: {books: updatedBooks}
-                };
+                        return currentBook;
+
+                    })
+
+                    let updatedStoreBooks = storeBooks.map((currentBook) => {
+
+                        if (currentBook.id === book.id) {
+                            currentBook = book;
+                        }
+
+                        return currentBook;
+
+                    })
+
+                    console.log(updatedStoreBooks);
+
+                    return {
+                        library: {
+                            shelves: CurrentState.library.shelves,
+                            books: updatedLibraryBooks
+                        }, store: {books: updatedStoreBooks}
+
+                    }
+
+                }
+
 
             })
 
-
-            update(this.state.store.books[book_id], newShelf).then(() => {
+            update(book, newShelf).then(() => {
                 console.log("Book is updated");
             }).catch((ErrorMessage) => {
 
@@ -110,13 +168,12 @@ class BooksApp extends React.Component {
 
         }
 
-
     }
 
 
     setBookDetails = (bookURLValue) => {
 
-        if(bookURLValue !== null) {
+        if (bookURLValue !== null) {
 
             get(bookURLValue).then(result => {
                 let book = result;
@@ -132,14 +189,24 @@ class BooksApp extends React.Component {
 
     searchForBook = (SearchText) => {
 
-        if (SearchText.trim() === "")
-            return;
+        this.setState((CurrentState) => ({store: {books: CurrentState.store.books, searchValue: SearchText}}));
 
-        search(SearchText).then((result) => {
+
+        if (SearchText.trim() === "") {
+
+            this.setState((CurrentState) => ({store: {books: []}}));
+
+            console.log(this.state.store.books);
+
+
+            return '';
+        }
+
+         search(SearchText).then((result) => {
 
             result = Array.isArray(result) ? result : [];
 
-            this.setState((CurrentState) => {
+            this.setState( (CurrentState) => {
 
                     let LibrarySearch = CurrentState.library.books.filter((book) => (book.title.includes(SearchText)));
 
@@ -147,14 +214,20 @@ class BooksApp extends React.Component {
                     result.map((storeBook, index) => {
                         LibrarySearch.map(libraryBook => {
 
-                            if (libraryBook.title === storeBook.title) {
+                            if (libraryBook.id === storeBook.id) {
                                 result[index].shelf = libraryBook.shelf;
+                                console.log(result[index]);
                             }
 
+                            return "";
                         })
+
+                        return "";
                     })
 
-                    return {store: {books: result}}
+                console.log(result);
+
+                return {store: {books: result}}
 
                 }
             )
@@ -164,23 +237,21 @@ class BooksApp extends React.Component {
 
     }
 
-
     render() {
 
         return (
 
-            <Switch>
-            <div className="app">
+                <div className="app">
 
-                <Route path='/Search'>
+                    <Route path='/Search'>
 
-                    <div className="search-books">
-                        <div className="search-books-bar">
-                            <Link to='/'>
-                                <button className="close-search">Close</button>
-                            </Link>
-                            <div className="search-books-input-wrapper">
-                                {/*
+                        <div className="search-books">
+                            <div className="search-books-bar">
+                                <Link to='/'>
+                                    <button className="close-search">Close</button>
+                                </Link>
+                                <div className="search-books-input-wrapper">
+                                    {/*
                   NOTES: The search from BooksAPI is limited to a particular set of search terms.
                   You can find these search terms here:
                   https://github.com/udacity/reactnd-project-myreads-starter/blob/master/SEARCH_TERMS.md
@@ -188,60 +259,64 @@ class BooksApp extends React.Component {
                   However, remember that the BooksAPI.search method DOES search by title or author. So, don't worry if
                   you don't find a specific author or title. Every search is limited by search terms.
                 */}
-                                <input type="text" placeholder="Search by title or author"
-                                       onChange={(event) => this.searchForBook(event.target.value)}/>
+                                    <input type="text" placeholder="Search by title or author"
+                                           value={this.state.store.searchValue}
+                                           onChange={(event) => {this.searchForBook(event.target.value)}}/>
 
+                                </div>
+                            </div>
+                            <div className="search-books-results">
+                                <ol className="books-grid">
+
+                                    {this.state.store.books.map((book, book_id) => {
+
+                                        return <Book book={book} book_id={book_id}
+                                                     updateBookShelf={this.updateBookShelf}
+                                                     place='store' key={book_id}/>
+
+                                    })}
+
+                                </ol>
                             </div>
                         </div>
-                        <div className="search-books-results">
-                            <ol className="books-grid">
 
-                                {this.state.store.books.map((book, book_id) => {
+                    </Route>
 
-                                    return <Book book={book} book_id={book_id} updateBookShelf={this.updateBookShelf}
-                                                 place='store' key={book_id}/>
+                    <Route path='/' exact>
 
-                                })}
+                        <div className="list-books">
+                            <Header/>
+                            <div className="list-books-content">
+                                <div>
 
-                            </ol>
+                                    <ShelvesList shelves={this.state.library.shelves} books={this.state.library.books}
+                                                 updateBookShelf={this.updateBookShelf} place='library'/>
+
+                                </div>
+                            </div>
+                            <div className="open-search">
+                                <Link to='/Search'>
+                                    <button>Add a book</button>
+                                </Link>
+                            </div>
                         </div>
-                    </div>
 
-                </Route>
+                    </Route>
 
-                <Route path='/' exact>
 
-                    <div className="list-books">
+                    <Route path={`/book`}>
+
                         <Header/>
-                        <div className="list-books-content">
-                            <div>
 
-                                <ShelvesList shelves={this.state.library.shelves} books={this.state.library.books}
-                                             updateBookShelf={this.updateBookShelf} place='library'/>
+                        <BookDetails book={this.state.CurrentBook}
+                                     imageURL={this.state.CurrentBook.imageLinks === undefined ? '' : this.state.CurrentBook.imageLinks.thumbnail}
+                                     rating={this.state.CurrentBook.ratingCount === undefined ? "No Rating" : `${this.state.CurrentBook.ratingCount} / 10`}
+                                     setBookDetails={this.setBookDetails}/>
 
-                            </div>
-                        </div>
-                        <div className="open-search">
-                            <Link to='/Search'>
-                                <button>Add a book</button>
-                            </Link>
-                        </div>
-                    </div>
+                    </Route>
 
-                </Route>
+                </div>
 
-
-                <Route path={`/book`} >
-
-                    <Header/>
-
-                    <BookDetails book={this.state.CurrentBook} imageURL={this.state.CurrentBook.imageLinks === undefined ? '' : this.state.CurrentBook.imageLinks.thumbnail} rating={this.state.CurrentBook.ratingCount == undefined ? "No Rating" : `${this.state.CurrentBook.ratingCount} / 10`} setBookDetails={this.setBookDetails}/>
-
-                </Route>
-
-            </div>
-
-            </Switch>
         )
     }
 }
